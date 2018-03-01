@@ -1,12 +1,12 @@
 # CA
 resource "tls_private_key" "ca" {
-  count       = "${var.load_balancer["https"] == 1 ? 1 : 0}"
+  count       = "${var.load_balancer["self_signed"] == 1 ? 1 : 0}"
   algorithm   = "ECDSA"
   ecdsa_curve = "P384"
 }
 
 resource "tls_self_signed_cert" "ca" {
-  count                 = "${var.load_balancer["https"] == 1 ? 1 : 0}"
+  count                 = "${var.load_balancer["self_signed"] == 1 ? 1 : 0}"
   key_algorithm         = "ECDSA"
   private_key_pem       = "${tls_private_key.ca.private_key_pem}"
   is_ca_certificate     = true
@@ -22,13 +22,13 @@ resource "tls_self_signed_cert" "ca" {
 
 # GitLab server
 resource "tls_private_key" "gitlab" {
-  count       = "${var.load_balancer["https"] == 1 ? 1 : 0}"
+  count       = "${var.load_balancer["self_signed"] == 1 ? 1 : 0}"
   algorithm   = "ECDSA"
   ecdsa_curve = "P384"
 }
 
 resource "tls_cert_request" "gitlab" {
-  count           = "${var.load_balancer["https"] == 1 ? 1 : 0}"
+  count           = "${var.load_balancer["self_signed"] == 1 ? 1 : 0}"
   key_algorithm   = "ECDSA"
   private_key_pem = "${tls_private_key.gitlab.private_key_pem}"
   dns_names       = [ "*.${data.aws_region.current.name}.elb.amazonaws.com" ]
@@ -39,7 +39,7 @@ resource "tls_cert_request" "gitlab" {
 }
 
 resource "tls_locally_signed_cert" "gitlab" {
-  count                 = "${var.load_balancer["https"] == 1 ? 1 : 0}"
+  count                 = "${var.load_balancer["self_signed"] == 1 ? 1 : 0}"
   cert_request_pem      = "${tls_cert_request.gitlab.cert_request_pem}"
   ca_key_algorithm      = "ECDSA"
   ca_private_key_pem    = "${tls_private_key.ca.private_key_pem}"

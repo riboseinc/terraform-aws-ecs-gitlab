@@ -47,6 +47,8 @@ data "template_file" "ranners" {
     GITLAB_RUNNER_TOKEN       = "${random_string.gitlab_shared_runners_registration_token.result}"
     GITLAB_IMAGE              = "${var.gitlab_runners["docker_image"]}"
     GITLAB_CACHE_BUCKET_NAME  = "${aws_s3_bucket.s3-gitlab-runner-cache.id}"
+    GITLAB_SELF_SIGNED        = "${var.load_balancer["self_signed"] == 1 ? 1 : 0}"
+    GITLAB_SELF_SIGNED_CA     = "${tls_self_signed_cert.ca.cert_pem}"
     REGION                    = "${data.aws_region.current.name}"
   }
 }
