@@ -1,6 +1,6 @@
 resource "aws_elasticache_subnet_group" "main" {
   name       = "${var.prefix}"
-  subnet_ids = [ "${aws_subnet.services.id}" ]
+  subnet_ids = [ "${aws_subnet.private.*.id}" ]
 }
 
 resource "aws_elasticache_cluster" "main" {
@@ -17,7 +17,3 @@ resource "aws_elasticache_cluster" "main" {
     "${aws_security_group.allow_redis.id}"
   ]
 }
-#
-# output "ECS_Redis" {
-#   value = "${aws_elasticache_cluster.main.cache_nodes.0.address}"
-# }

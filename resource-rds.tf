@@ -1,10 +1,7 @@
 resource "aws_db_subnet_group" "main" {
-  name       = "${var.prefix}-aws_db_subnet_group"
-  tags       = "${var.default_tags}"
-  subnet_ids = [
-    "${aws_subnet.rds_a.id}",
-    "${aws_subnet.rds_b.id}"
-  ]
+  name_prefix = "${var.prefix}"
+  tags        = "${var.default_tags}"
+  subnet_ids  = [ "${aws_subnet.private.*.id}" ]
 }
 
 resource "random_id" "rds" {
@@ -32,7 +29,3 @@ resource "aws_db_instance" "main" {
     "${aws_security_group.allow_postgresql.id}"
   ]
 }
-#
-# output "RDS_PostgreSQL" {
-#   value = "${aws_db_instance.main.address}"
-# }

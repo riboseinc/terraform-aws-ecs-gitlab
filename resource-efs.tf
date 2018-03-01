@@ -4,8 +4,6 @@ resource "aws_efs_file_system" "main" {
 
 resource "aws_efs_mount_target" "main" {
   file_system_id = "${aws_efs_file_system.main.id}"
-  subnet_id      = "${aws_subnet.services.id}"
-  security_groups = [
-    "${aws_security_group.allow_all_public.id}"
-  ]
+  subnet_id      = "${aws_subnet.private.0.id}"
+  security_groups = [ "${aws_security_group.allow_all_public.id}" ]
 }

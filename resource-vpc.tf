@@ -13,81 +13,71 @@ resource "aws_internet_gateway" "main" {
   tags        = "${var.default_tags}"
 }
 
-resource "aws_subnet" "services" {
-  vpc_id                  = "${aws_vpc.main.id}"
-  cidr_block              = "${var.vpc_subnets["services"]}"
-  tags                    = "${var.default_tags}"
-  availability_zone       = "${data.aws_region.current.name}a"
+#
+# Public subnets (IGW)
+#
+
+resource "aws_subnet" "public" {
+  count             = "${length(var.vpc_public_subnets)}"
+  vpc_id            = "${aws_vpc.main.id}"
+  cidr_block        = "${element(values(var.vpc_public_subnets), count.index)}"
+  tags              = "${var.default_tags}"
+  availability_zone = "${data.aws_region.current.name}${element(keys(var.vpc_public_subnets), count.index)}"
 }
 
-resource "aws_subnet" "frontend" {
-  vpc_id                  = "${aws_vpc.main.id}"
-  cidr_block              = "${var.vpc_subnets["frontend"]}"
-  tags                    = "${var.default_tags}"
-  availability_zone       = "${data.aws_region.current.name}b"
-}
-
-resource "aws_subnet" "rds_a" {
-  vpc_id                  = "${aws_vpc.main.id}"
-  cidr_block              = "${var.vpc_subnets["rds_a"]}"
-  tags                    = "${var.default_tags}"
-  availability_zone       = "${data.aws_region.current.name}a"
-}
-
-resource "aws_subnet" "rds_b" {
-  vpc_id                  = "${aws_vpc.main.id}"
-  cidr_block              = "${var.vpc_subnets["rds_b"]}"
-  tags                    = "${var.default_tags}"
-  availability_zone       = "${data.aws_region.current.name}b"
-}
-
-resource "aws_route_table" "main" {
-  vpc_id      = "${aws_vpc.main.id}"
-  tags        = "${var.default_tags}"
-
+resource "aws_route_table" "public" {
+  count   = "${length(var.vpc_public_subnets)}"
+  vpc_id  = "${aws_vpc.main.id}"
+  tags    = "${var.default_tags}"
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = "${aws_internet_gateway.main.id}"
   }
 }
 
-resource "aws_eip" "nat" {
+resource "aws_route_table_association" "frontend_a" {
+  count          = "${length(var.vpc_public_subnets)}"
+  subnet_id      = "${element(aws_subnet.public.*.id, count.index)}"
+  route_table_id = "${element(aws_route_table.public.*.id, count.index)}"
+}
+
+#
+# Private subnets (NAT)
+#
+
+resource "aws_eip" "private" {
+  count = "${length(var.vpc_private_subnets)}"
   vpc   = true
   tags  = "${var.default_tags}"
 }
 
-resource "aws_nat_gateway" "main" {
-  allocation_id = "${aws_eip.nat.id}"
-  subnet_id     = "${aws_subnet.frontend.id}"
+resource "aws_subnet" "private" {
+  count             = "${length(var.vpc_private_subnets)}"
+  vpc_id            = "${aws_vpc.main.id}"
+  cidr_block        = "${element(values(var.vpc_private_subnets), count.index)}"
+  tags              = "${var.default_tags}"
+  availability_zone = "${data.aws_region.current.name}${element(keys(var.vpc_private_subnets), count.index)}"
+}
+
+resource "aws_nat_gateway" "private" {
+  count         = "${length(var.vpc_private_subnets)}"
+  allocation_id = "${element(aws_eip.private.*.id, count.index)}"
+  subnet_id     = "${aws_subnet.public.0.id}"
   tags          = "${var.default_tags}"
 }
 
-resource "aws_route_table" "nat" {
+resource "aws_route_table" "private" {
+  count       = "${length(var.vpc_private_subnets)}"
   vpc_id      = "${aws_vpc.main.id}"
   tags        = "${var.default_tags}"
-
   route {
     cidr_block      = "0.0.0.0/0"
-    nat_gateway_id  = "${aws_nat_gateway.main.id}"
+    nat_gateway_id  = "${element(aws_nat_gateway.private.*.id, count.index)}"
   }
 }
 
-resource "aws_route_table_association" "services" {
-  subnet_id      = "${aws_subnet.services.id}"
-  route_table_id = "${aws_route_table.nat.id}"
-}
-
-resource "aws_route_table_association" "frontend" {
-  subnet_id      = "${aws_subnet.frontend.id}"
-  route_table_id = "${aws_route_table.main.id}"
-}
-
-resource "aws_route_table_association" "rds_a" {
-  subnet_id      = "${aws_subnet.rds_a.id}"
-  route_table_id = "${aws_route_table.main.id}"
-}
-
-resource "aws_route_table_association" "rds_b" {
-  subnet_id      = "${aws_subnet.rds_b.id}"
-  route_table_id = "${aws_route_table.main.id}"
+resource "aws_route_table_association" "private" {
+  count          = "${length(var.vpc_private_subnets)}"
+  subnet_id      = "${element(aws_subnet.private.*.id, count.index)}"
+  route_table_id = "${element(aws_route_table.private.*.id, count.index)}"
 }

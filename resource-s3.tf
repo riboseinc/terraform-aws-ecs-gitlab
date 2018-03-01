@@ -8,6 +8,12 @@ resource "aws_s3_bucket" "s3-gitlab-backups" {
   force_destroy = "${var.force_destroy_backups}"
 }
 
+resource "aws_s3_bucket" "s3-gitlab-runner-cache" {
+  bucket        = "${var.prefix}-gitlab-runner-cache"
+  tags          = "${var.default_tags}"
+  force_destroy = true
+}
+
 output "Backup butcket" {
   value = "${aws_s3_bucket.s3-gitlab-backups.id}"
 }

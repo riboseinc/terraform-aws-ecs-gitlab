@@ -1,5 +1,4 @@
-#!/bin/bash
-
+#!/bin/bash -x
 stop ecs
 yum update -y
 yum install -y nfs-utils aws-cli

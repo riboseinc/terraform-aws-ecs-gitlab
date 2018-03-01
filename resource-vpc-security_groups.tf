@@ -1,5 +1,6 @@
 resource "aws_security_group" "allow_all_egress" {
-  name        = "Allow All Egress"
+  name_prefix = "${var.prefix}"
+  description = "Allow All Egress"
   vpc_id      = "${aws_vpc.main.id}"
   tags        = "${var.default_tags}"
 
@@ -12,7 +13,8 @@ resource "aws_security_group" "allow_all_egress" {
 }
 
 resource "aws_security_group" "allow_icmp" {
-  name        = "Allow ICMP"
+  name_prefix = "${var.prefix}"
+  description = "Allow ICMP"
   vpc_id      = "${aws_vpc.main.id}"
   tags        = "${var.default_tags}"
 
@@ -25,7 +27,8 @@ resource "aws_security_group" "allow_icmp" {
 }
 
 resource "aws_security_group" "allow_postgresql" {
-  name        = "Allow PostgreSQL"
+  name_prefix = "${var.prefix}"
+  description = "Allow PostgreSQL"
   vpc_id      = "${aws_vpc.main.id}"
   tags        = "${var.default_tags}"
 
@@ -34,14 +37,15 @@ resource "aws_security_group" "allow_postgresql" {
     to_port         = 5432
     protocol        = "tcp"
     cidr_blocks     = [
-      "${var.vpc_subnets["services"]}",
-      "${var.vpc_subnets["frontend"]}"
+      "${values(var.vpc_public_subnets)}",
+      "${values(var.vpc_private_subnets)}"
     ]
   }
 }
 
 resource "aws_security_group" "allow_web_public" {
-  name        = "Allow Web Public"
+  name_prefix = "${var.prefix}"
+  description = "Allow Web Public"
   vpc_id      = "${aws_vpc.main.id}"
   tags        = "${var.default_tags}"
 
@@ -61,7 +65,8 @@ resource "aws_security_group" "allow_web_public" {
 }
 
 resource "aws_security_group" "allow_web_private" {
-  name        = "Allow Web Private"
+  name_prefix = "${var.prefix}"
+  description = "Allow Web Private"
   vpc_id      = "${aws_vpc.main.id}"
   tags        = "${var.default_tags}"
 
@@ -70,8 +75,8 @@ resource "aws_security_group" "allow_web_private" {
     to_port         = 80
     protocol        = "tcp"
     cidr_blocks     = [
-      "${var.vpc_subnets["services"]}",
-      "${var.vpc_subnets["frontend"]}"
+      "${values(var.vpc_public_subnets)}",
+      "${values(var.vpc_private_subnets)}"
     ]
   }
 
@@ -80,14 +85,15 @@ resource "aws_security_group" "allow_web_private" {
     to_port         = 443
     protocol        = "tcp"
     cidr_blocks     = [
-      "${var.vpc_subnets["services"]}",
-      "${var.vpc_subnets["frontend"]}"
+      "${values(var.vpc_public_subnets)}",
+      "${values(var.vpc_private_subnets)}"
     ]
   }
 }
 
 resource "aws_security_group" "allow_redis" {
-  name        = "Allow Redis"
+  name_prefix = "${var.prefix}"
+  description = "Allow Redis"
   vpc_id      = "${aws_vpc.main.id}"
   tags        = "${var.default_tags}"
 
@@ -96,14 +102,15 @@ resource "aws_security_group" "allow_redis" {
     to_port         = 6379
     protocol        = "tcp"
     cidr_blocks     = [
-      "${var.vpc_subnets["services"]}",
-      "${var.vpc_subnets["frontend"]}"
+      "${values(var.vpc_public_subnets)}",
+      "${values(var.vpc_private_subnets)}"
     ]
   }
 }
 
 resource "aws_security_group" "allow_ssh" {
-  name        = "Allow SSH"
+  name_prefix = "${var.prefix}"
+  description = "Allow SSH"
   vpc_id      = "${aws_vpc.main.id}"
   tags        = "${var.default_tags}"
 
@@ -112,14 +119,14 @@ resource "aws_security_group" "allow_ssh" {
     to_port         = 22
     protocol        = "tcp"
     cidr_blocks     = [
-      "${var.vpc_subnets["services"]}",
-      "${var.vpc_subnets["frontend"]}"
+      "${values(var.vpc_public_subnets)}",
+      "${values(var.vpc_private_subnets)}"
     ]
   }
 }
 
 resource "aws_security_group" "allow_all_private" {
-  name        = "allow_all_private"
+  name_prefix = "${var.prefix}"
   description = "Allow all inbound traffic"
   vpc_id      = "${aws_vpc.main.id}"
   tags        = "${var.default_tags}"
@@ -129,8 +136,8 @@ resource "aws_security_group" "allow_all_private" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks     = [
-      "${var.vpc_subnets["services"]}",
-      "${var.vpc_subnets["frontend"]}"
+      "${values(var.vpc_public_subnets)}",
+      "${values(var.vpc_private_subnets)}"
     ]
   }
 
@@ -139,13 +146,13 @@ resource "aws_security_group" "allow_all_private" {
     to_port         = 0
     protocol        = "-1"
     cidr_blocks     = [
-      "${var.vpc_subnets["services"]}"
+      "${values(var.vpc_private_subnets)}"
     ]
   }
 }
 
 resource "aws_security_group" "allow_all_public" {
-  name        = "allow_all_public"
+  name_prefix = "${var.prefix}"
   description = "Allow all inbound traffic"
   vpc_id      = "${aws_vpc.main.id}"
   tags        = "${var.default_tags}"
