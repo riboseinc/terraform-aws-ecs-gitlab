@@ -2,7 +2,7 @@ resource "aws_ecs_cluster" "main" {
   name = "${var.prefix}"
 }
 
-resource "aws_ecs_task_definition" "gitlab" {
+resource "aws_ecs_task_definition" "gitlab-servers" {
   depends_on                = [ "aws_autoscaling_group.ecs_instances" ]
   family                    = "gitlab"
   requires_compatibilities  = [ "EC2" ]
@@ -21,12 +21,23 @@ resource "aws_ecs_task_definition" "gitlab" {
     name      = "gitlab-data"
     host_path = "/efs/gitlab/"
   }
+  volume {
+    name      = "gitlab-ssh"
+    host_path = "/efs/gitlab/.ssh/"
+  }
+  volume {
+    name      = "gitlab-secrets"
+    host_path = "/efs/gitlab-secrets.json"
+  }
   container_definitions     = <<EOF
   [
     {
       "name": "gitlab",
       "image": "${var.gitlab_servers["image"]}",
       "essential": true,
+      "dockerLabels": {
+        "service": "gitlab-server"
+      },
       "environment" : [
           {
             "name" : "GITLAB_OMNIBUS_CONFIG",
@@ -35,14 +46,6 @@ resource "aws_ecs_task_definition" "gitlab" {
           {
             "name" : "GITLAB_ROOT_PASSWORD",
             "value" : "${random_string.gitlab_root_password.result}"
-          },
-          {
-            "name" : "GITLAB_BACKUP_SCHEDULE",
-            "value" : "${var.gitlab_servers["backup_schedule"]}"
-          },
-          {
-            "name" : "GITLAB_BACKUP_TIME",
-            "value" : "${var.gitlab_servers["backup_time"]}"
           },
           {
             "name" : "GITLAB_SHARED_RUNNERS_REGISTRATION_TOKEN",
@@ -68,6 +71,10 @@ resource "aws_ecs_task_definition" "gitlab" {
         {
           "sourceVolume": "gitlab-data",
           "containerPath": "/gitlab-data"
+        },
+        {
+          "sourceVolume": "gitlab-ssh",
+          "containerPath": "/var/opt/gitlab/.ssh"
         }
       ]
     }
@@ -75,20 +82,16 @@ resource "aws_ecs_task_definition" "gitlab" {
 EOF
 }
 
-resource "aws_ecs_service" "gitlab" {
+resource "aws_ecs_service" "gitlab-servers" {
+  depends_on            = ["aws_lb_listener.http"]
   name                  = "${var.prefix}-gitlab"
   cluster               = "${aws_ecs_cluster.main.id}"
-  task_definition       = "${aws_ecs_task_definition.gitlab.arn}"
+  task_definition       = "${aws_ecs_task_definition.gitlab-servers.arn}"
   desired_count         = "${var.gitlab_servers["count"]}"
   launch_type           = "EC2"
-
   load_balancer {
     target_group_arn  = "${aws_lb_target_group.http.arn}"
     container_name    = "gitlab"
     container_port    = 80
   }
-
-  depends_on = [
-    "aws_lb_listener.http"
-  ]
 }

@@ -1,6 +1,7 @@
 #
 # ECS
 #
+
 resource "aws_iam_role" "ecs_instance_role" {
   name_prefix         = "${var.prefix}"
   assume_role_policy  = <<EOF
@@ -102,23 +103,13 @@ resource "aws_iam_role_policy" "ecs_instance_role" {
         "s3:GetObjectAcl",
         "s3:ListBucketMultipartUploads",
         "s3:PutObject",
-        "s3:PutObjectAcl"
+        "s3:PutObjectAcl",
+        "s3:ListBucket"
       ],
-      "Resource": "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-backups.id}/*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:AbortMultipartUpload",
-        "s3:GetBucketAcl",
-        "s3:GetBucketLocation",
-        "s3:GetObject",
-        "s3:GetObjectAcl",
-        "s3:ListBucketMultipartUploads",
-        "s3:PutObject",
-        "s3:PutObjectAcl"
-      ],
-      "Resource": "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-backups.id}/*"
+      "Resource": [
+        "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-backups.id}",
+        "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-backups.id}/*"
+      ]
     }
   ]
 }
@@ -180,29 +171,18 @@ resource "aws_iam_role_policy" "runner_instance_role" {
         "s3:GetObjectAcl",
         "s3:ListBucketMultipartUploads",
         "s3:PutObject",
-        "s3:PutObjectAcl"
+        "s3:PutObjectAcl",
+        "s3:ListBucket"
       ],
-      "Resource": "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-runner-cache.id}/*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:AbortMultipartUpload",
-        "s3:GetBucketAcl",
-        "s3:GetBucketLocation",
-        "s3:GetObject",
-        "s3:GetObjectAcl",
-        "s3:ListBucketMultipartUploads",
-        "s3:PutObject",
-        "s3:PutObjectAcl"
-      ],
-      "Resource": "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-runner-cache.id}/*"
+      "Resource": [
+        "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-runner-cache.id}",
+        "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-runner-cache.id}/*"
+      ]
     }
   ]
 }
 EOF
 }
-
 
 #
 # Other

@@ -31,7 +31,7 @@ data "aws_ami" "amazon_linux" {
 }
 
 data "template_file" "ecs_instances" {
-  template = "${file("${path.module}/cloud-init/ecs.sh")}"
+  template = "${file("${path.module}/cloud-init/ecs.yml")}"
   vars {
     efs_address      = "${aws_efs_mount_target.main.ip_address}"
     ecs_cluster      = "${aws_ecs_cluster.main.name}"
@@ -39,7 +39,7 @@ data "template_file" "ecs_instances" {
 }
 
 data "template_file" "ranners" {
-  template = "${file("${path.module}/cloud-init/ranners.sh")}"
+  template = "${file("${path.module}/cloud-init/ranners.yml")}"
   vars {
     GITLAB_CONCURRENT_JOB     = "${var.gitlab_runners["concurrent"]}"
     GITLAB_CHECK_INTERVAL     = "${var.gitlab_runners["check_interval"]}"
@@ -48,7 +48,7 @@ data "template_file" "ranners" {
     GITLAB_IMAGE              = "${var.gitlab_runners["docker_image"]}"
     GITLAB_CACHE_BUCKET_NAME  = "${aws_s3_bucket.s3-gitlab-runner-cache.id}"
     GITLAB_SELF_SIGNED        = "${var.load_balancer["self_signed"] == 1 ? 1 : 0}"
-    GITLAB_SELF_SIGNED_CA     = "${tls_self_signed_cert.ca.cert_pem}"
+    GITLAB_SELF_SIGNED_CA     = "${jsonencode(tls_self_signed_cert.ca.cert_pem)}"
     REGION                    = "${data.aws_region.current.name}"
   }
 }

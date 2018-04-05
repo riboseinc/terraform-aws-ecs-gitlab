@@ -51,3 +51,20 @@ resource "tls_locally_signed_cert" "gitlab" {
     "server_auth",
   ]
 }
+
+#
+# SSH
+#
+
+resource "tls_private_key" "ssh" {
+  algorithm   = "RSA"
+  ecdsa_curve = "2048"
+}
+
+resource "local_file" "ssh_private_key_pem" {
+  content   = "${tls_private_key.ssh.private_key_pem}"
+  filename  = "${path.module}/keys/${var.prefix}.key"
+  provisioner "local-exec" {
+    command = "chmod 0600 ${path.module}/keys/${var.prefix}.key"
+  }
+}

@@ -1,0 +1,33 @@
+#cloud-config
+package_upgrade: true
+
+packages:
+  - nfs-utils
+  - aws-cli
+
+runcmd:
+  - echo '${efs_address}:/ /efs nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 0 0' >>  /etc/fstab
+  - mkdir /efs
+  - mount -a -t nfs4
+  - service docker restart
+  - start ecs
+
+write_files:
+  - owner: root:root
+    path: /etc/ecs/ecs.config
+    content: |
+      ECS_CLUSTER=${ecs_cluster}
+
+  - owner: root:root
+    path: /opt/scripts/gitlab-backup.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      docker ps --filter "label=service=gitlab-server" --quiet | while read line; do
+        docker exec -it $line gitlab-rake gitlab:backup:create CRON=1
+      done
+
+  - owner: root:root
+    path: /etc/cron.d/gitlab
+    content: |
+      10 5 * * * root /opt/scripts/gitlab-backup.sh
