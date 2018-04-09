@@ -77,6 +77,7 @@ resource "aws_iam_role_policy" "ecs_instance_role" {
         "ecr:GetDownloadUrlForLayer",
         "ecr:BatchGetImage",
         "ecs:StartTask",
+        "cloudwatch:PutMetricData",
         "elasticloadbalancing:Describe*",
         "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
         "elasticloadbalancing:RegisterInstancesWithLoadBalancer",

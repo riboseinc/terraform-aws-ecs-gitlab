@@ -1,5 +1,5 @@
 resource "aws_launch_configuration" "ecs_instances" {
-  name_prefix                 = "${var.prefix}"
+  name                        = "${var.prefix}"
   image_id                    = "${data.aws_ami.amazon-ecs-optimized.id}"
   instance_type               = "${var.ecs_instances["instance_type"]}"
   key_name                    = "${aws_key_pair.main.key_name}"

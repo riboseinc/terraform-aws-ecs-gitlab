@@ -35,12 +35,6 @@ data "template_file" "ecs_instances" {
   vars {
     efs_address      = "${aws_efs_mount_target.main.ip_address}"
     ecs_cluster      = "${aws_ecs_cluster.main.name}"
-  }
-}
-
-data "template_file" "ranners" {
-  template = "${file("${path.module}/cloud-init/ranners.yml")}"
-  vars {
     GITLAB_CONCURRENT_JOB     = "${var.gitlab_runners["concurrent"]}"
     GITLAB_CHECK_INTERVAL     = "${var.gitlab_runners["check_interval"]}"
     GITLAB_RUNNER_URL         = "${local.gitlab_address}"

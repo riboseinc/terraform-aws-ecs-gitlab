@@ -1,9 +1,25 @@
 #cloud-config
 package_upgrade: true
 
+yum_repos:
+  runner_gitlab-runner:
+    name: runner_gitlab-runner
+    baseurl: https://packages.gitlab.com/runner/gitlab-runner/el/6/$basearch
+    repo_gpgcheck: 1
+    gpgcheck: 0
+    enabled: 1
+    gpgkey: https://packages.gitlab.com/runner/gitlab-runner/gpgkey
+    sslverify: 1
+    sslcacert: /etc/pki/tls/certs/ca-bundle.crt
+    metadata_expire: 300
+
 packages:
   - nfs-utils
   - aws-cli
+  - wget
+  - unzip
+  - gitlab-runner
+  - docker
 
 runcmd:
   - echo '${efs_address}:/ /efs nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 0 0' >>  /etc/fstab
@@ -11,12 +27,66 @@ runcmd:
   - mount -a -t nfs4
   - service docker restart
   - start ecs
+  - mkdir -p /tmp/cloudwatch_agent/ && cd /tmp/cloudwatch_agent
+  - wget https://s3.amazonaws.com/amazoncloudwatch-agent/linux/amd64/latest/AmazonCloudWatchAgent.zip -O AmazonCloudWatchAgent.zip
+  - unzip AmazonCloudWatchAgent.zip
+  - sudo ./install.sh
+  - /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c "file:/etc/cloudwatch-agent.conf" -s
+  - export REGISTER_NON_INTERACTIVE="true"
+  - export REGISTER_LOCKED="false"
+  - export REGISTER_RUN_UNTAGGED="true"
+  - export CI_SERVER_URL="${GITLAB_RUNNER_URL}"
+  - export CI_SERVER_TLS_CA_FILE="/etc/gitlab-runner/ca.pem"
+  - export REGISTRATION_TOKEN="${GITLAB_RUNNER_TOKEN}"
+  - export RUNNER_EXECUTOR="docker"
+  - export DOCKER_IMAGE="${GITLAB_IMAGE}"
+  - export CACHE_TYPE="s3"
+  - export S3_BUCKET_NAME="${GITLAB_CACHE_BUCKET_NAME}"
+  - export S3_BUCKET_LOCATION="${REGION}"
+  - export S3_CACHE_INSECURE="false"
+  - export CACHE_SHARED="true"
+  - chkconfig gitlab-runner on; service gitlab-runner start
+  - until gitlab-runner register; do sleep 5; done
 
 write_files:
+  - path: /etc/cloudwatch-agent.conf
+    permissions: '0644'
+    content: |
+      {
+        "agent": {
+          "metrics_collection_interval": 120,
+          "region": "${REGION}",
+          "logfile": "/var/log/cloudwatch-agent.log"
+        },
+        "metrics": {
+          "namespace": "ECS",
+          "metrics_collected": {
+            "mem": {
+              "measurement": ["mem_free", "mem_used", "mem_total"]
+            }
+          },
+          "append_dimensions": {
+            "ImageId": "$${aws:ImageId}",
+            "InstanceId": "$${aws:InstanceId}",
+            "InstanceType": "$${aws:InstanceType}",
+            "AutoScalingGroupName": "$${aws:AutoScalingGroupName}"
+          }
+        }
+      }
+
   - owner: root:root
     path: /etc/ecs/ecs.config
+    content: ECS_CLUSTER=${ecs_cluster}
+
+  - owner: root:root
+    path: /etc/gitlab-runner/ca.pem
+    content: ${GITLAB_SELF_SIGNED_CA}
+
+  - owner: root:root
+    path: /etc/gitlab-runner/config.toml
     content: |
-      ECS_CLUSTER=${ecs_cluster}
+      concurrent = ${GITLAB_CONCURRENT_JOB}
+      check_interval = ${GITLAB_CHECK_INTERVAL}
 
   - owner: root:root
     path: /opt/scripts/gitlab-backup.sh
