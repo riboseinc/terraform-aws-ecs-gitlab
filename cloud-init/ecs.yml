@@ -59,10 +59,16 @@ write_files:
           "logfile": "/var/log/cloudwatch-agent.log"
         },
         "metrics": {
-          "namespace": "ECS",
+          "namespace": "Custom/EC2",
           "metrics_collected": {
             "mem": {
-              "measurement": ["mem_free", "mem_used", "mem_total"]
+              "measurement": [
+                "mem_used_percent",
+                "mem_available_percent"
+              ],
+              "append_dimensions": {
+                "ClusterName":"${ecs_cluster}"
+              }
             }
           },
           "append_dimensions": {
