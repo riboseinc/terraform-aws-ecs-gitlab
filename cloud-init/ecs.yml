@@ -54,7 +54,7 @@ write_files:
     content: |
       {
         "agent": {
-          "metrics_collection_interval": 120,
+          "metrics_collection_interval": 60,
           "region": "${REGION}",
           "logfile": "/var/log/cloudwatch-agent.log"
         },
@@ -72,9 +72,6 @@ write_files:
             }
           },
           "append_dimensions": {
-            "ImageId": "$${aws:ImageId}",
-            "InstanceId": "$${aws:InstanceId}",
-            "InstanceType": "$${aws:InstanceType}",
             "AutoScalingGroupName": "$${aws:AutoScalingGroupName}"
           }
         }

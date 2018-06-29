@@ -1,4 +1,4 @@
-variable "test" { default = false }
+variable "test_instance" { default = false }
 variable "force_destroy_backups" { default = true }
 
 variable "prefix" {
@@ -92,7 +92,7 @@ variable "elasticache" {
   type = "map"
   default = {
     node_type       = "cache.t2.micro"
-    num_cache_nodes = 1
+    version         = "3.2.10"
   }
 }
 
@@ -106,6 +106,7 @@ variable "rds" {
     username            = "gitlab"
     password            = "-g1tl4b_Passw0rd!-"
     skip_final_snapshot = true
+    version             = "9.6.6"
   }
 }
 

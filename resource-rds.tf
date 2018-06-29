@@ -17,7 +17,7 @@ resource "aws_db_instance" "main" {
   allocated_storage         = "${var.rds["allocated_storage"]}"
   storage_type              = "${var.rds["storage_type"]}"
   engine                    = "postgres"
-  engine_version            = "9.6.6"
+  engine_version            = "${var.rds["version"]}"
   instance_class            = "${var.rds["instance_class"]}"
   username                  = "${var.rds["username"]}"
   password                  = "${random_string.gitlab_postgres_password.result}"

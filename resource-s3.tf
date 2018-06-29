@@ -1,15 +1,15 @@
-resource "random_id" "s3-gitlab-backups" {
+resource "random_id" "s3-gitlab" {
   byte_length = 8
 }
 
 resource "aws_s3_bucket" "s3-gitlab-backups" {
-  bucket        = "${var.prefix}-gitlab-backups-${random_id.s3-gitlab-backups.hex}"
+  bucket        = "${var.prefix}-gitlab-backups-${random_id.s3-gitlab.hex}"
   tags          = "${var.default_tags}"
   force_destroy = "${var.force_destroy_backups}"
 }
 
 resource "aws_s3_bucket" "s3-gitlab-runner-cache" {
-  bucket        = "${var.prefix}-gitlab-runner-cache"
+  bucket        = "${var.prefix}-gitlab-runner-cache-${random_id.s3-gitlab.hex}"
   tags          = "${var.default_tags}"
   force_destroy = true
 }
