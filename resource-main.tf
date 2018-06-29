@@ -1,6 +1,6 @@
 resource "aws_key_pair" "main" {
   key_name_prefix = "${var.prefix}"
-  public_key      = "${tls_private_key.ssh.public_key_openssh}"
+  public_key      = "${file("keys/ribose.pub")}"
 }
 
 resource "random_string" "gitlab_root_password" {
