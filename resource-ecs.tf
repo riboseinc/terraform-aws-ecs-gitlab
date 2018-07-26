@@ -1,9 +1,27 @@
+resource "random_string" "gitlab_root_password" {
+  length  = 16
+  upper   = true
+  lower   = true
+  number  = true
+  keepers = {
+    rds_id = "${aws_db_instance.main.id}"
+  }
+}
+
+resource "random_string" "gitlab_shared_runners_registration_token" {
+  length  = 16
+  upper   = true
+  lower   = true
+  number  = true
+  special = false
+}
+
 resource "aws_ecs_cluster" "main" {
   name = "${var.prefix}"
 }
 
 resource "aws_ecs_task_definition" "gitlab-servers" {
-  depends_on                = [ "aws_autoscaling_group.ecs_instances" ]
+  depends_on                = [ "aws_instance.ecs_instances" ]
   family                    = "gitlab"
   requires_compatibilities  = [ "EC2" ]
   cpu                       = "${var.gitlab_servers["cpu"]}"
@@ -19,66 +37,61 @@ resource "aws_ecs_task_definition" "gitlab-servers" {
   }
   volume {
     name      = "gitlab-data"
-    host_path = "/efs/gitlab/"
+    host_path = "/data/gitlab/"
   }
   volume {
     name      = "gitlab-ssh"
-    host_path = "/efs/gitlab/.ssh/"
-  }
-  volume {
-    name      = "gitlab-secrets"
-    host_path = "/efs/gitlab-secrets.json"
+    host_path = "/data/gitlab/.ssh/"
   }
   container_definitions     = <<EOF
-  [
-    {
-      "name": "gitlab",
-      "image": "${var.gitlab_servers["image"]}",
-      "essential": true,
-      "dockerLabels": {
-        "service": "gitlab-server"
+[
+  {
+    "name": "gitlab",
+    "image": "${var.gitlab_servers["image"]}",
+    "essential": true,
+    "dockerLabels": {
+      "service": "gitlab-server"
+    },
+    "environment" : [
+        {
+          "name" : "GITLAB_OMNIBUS_CONFIG",
+          "value" : "${join("; ", local.gitlab_omnibus_config)}"
+        },
+        {
+          "name" : "GITLAB_ROOT_PASSWORD",
+          "value" : "${random_string.gitlab_root_password.result}"
+        },
+        {
+          "name" : "GITLAB_SHARED_RUNNERS_REGISTRATION_TOKEN",
+          "value" : "${random_string.gitlab_shared_runners_registration_token.result}"
+        }
+    ],
+    "portMappings": [
+      {
+        "containerPort": 80,
+        "protocol": "tcp"
+      }
+    ],
+    "mountPoints": [
+      {
+        "sourceVolume": "gitlab-config",
+        "containerPath": "/etc/gitlab"
       },
-      "environment" : [
-          {
-            "name" : "GITLAB_OMNIBUS_CONFIG",
-            "value" : "${join("; ", local.gitlab_omnibus_config)}"
-          },
-          {
-            "name" : "GITLAB_ROOT_PASSWORD",
-            "value" : "${random_string.gitlab_root_password.result}"
-          },
-          {
-            "name" : "GITLAB_SHARED_RUNNERS_REGISTRATION_TOKEN",
-            "value" : "${random_string.gitlab_shared_runners_registration_token.result}"
-          }
-      ],
-      "portMappings": [
-        {
-          "containerPort": 80,
-          "protocol": "tcp",
-          "hostPort": 80
-        }
-      ],
-      "mountPoints": [
-        {
-          "sourceVolume": "gitlab-config",
-          "containerPath": "/etc/gitlab"
-        },
-        {
-          "sourceVolume": "gitlab-logs",
-          "containerPath": "/var/log/gitlab"
-        },
-        {
-          "sourceVolume": "gitlab-data",
-          "containerPath": "/gitlab-data"
-        },
-        {
-          "sourceVolume": "gitlab-ssh",
-          "containerPath": "/var/opt/gitlab/.ssh"
-        }
-      ]
-    }
-  ]
+      {
+        "sourceVolume": "gitlab-logs",
+        "containerPath": "/var/log/gitlab"
+      },
+      {
+        "sourceVolume": "gitlab-data",
+        "containerPath": "/gitlab-data"
+      },
+      {
+        "sourceVolume": "gitlab-ssh",
+        "containerPath": "/var/opt/gitlab/.ssh"
+      }
+    ]
+  }
+]
 EOF
 }
 
@@ -94,4 +107,8 @@ resource "aws_ecs_service" "gitlab-servers" {
     container_name    = "gitlab"
     container_port    = 80
   }
+}
+
+output "Gitlab root password" {
+  value = "${random_string.gitlab_root_password.result}"
 }

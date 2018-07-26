@@ -2,7 +2,7 @@ terraform {
   required_version = "~> 0.11"
   backend "s3" {
     bucket = "ribose-terraform"
-    key    = "ext-tf-aws-gitlab_ecs"
+    key    = "ext-tf-aws-gitlab-ecs"
     region = "us-west-2"
   }
 }

@@ -16,9 +16,10 @@ resource "aws_lb_target_group" "http" {
   protocol      = "HTTP"
   vpc_id        = "${aws_vpc.main.id}"
   health_check {
-    interval = 10
-    timeout  = 5
-    port     = 80
+    interval            = 60
+    timeout             = 10
+    healthy_threshold   = 5
+    unhealthy_threshold = 5
     protocol = "HTTP"
     matcher  = "200"
     path     = "/users/sign_in"
@@ -46,10 +47,6 @@ resource "aws_lb_listener" "https" {
     target_group_arn = "${aws_lb_target_group.http.arn}"
     type             = "forward"
   }
-}
-
-locals {
-  gitlab_address = "http${var.load_balancer["https"] == 1 ? "s" : ""}://${aws_lb.gitlab.dns_name}/"
 }
 
 output "Web access" {

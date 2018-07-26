@@ -14,6 +14,24 @@ resource "aws_s3_bucket" "s3-gitlab-runner-cache" {
   force_destroy = true
 }
 
+resource "aws_s3_bucket" "s3-gitlab-artifacts" {
+  bucket        = "${var.prefix}-gitlab-rartifacts-${random_id.s3-gitlab.hex}"
+  tags          = "${var.default_tags}"
+  force_destroy = true
+}
+
+resource "aws_s3_bucket" "s3-gitlab-lfs" {
+  bucket        = "${var.prefix}-gitlab-lfs-${random_id.s3-gitlab.hex}"
+  tags          = "${var.default_tags}"
+  force_destroy = true
+}
+
+resource "aws_s3_bucket" "s3-gitlab-uploads" {
+  bucket        = "${var.prefix}-gitlab-uploads-${random_id.s3-gitlab.hex}"
+  tags          = "${var.default_tags}"
+  force_destroy = true
+}
+
 output "Backup butcket" {
   value = "${aws_s3_bucket.s3-gitlab-backups.id}"
 }

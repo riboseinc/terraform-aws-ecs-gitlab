@@ -1,6 +1,6 @@
 resource "aws_elasticache_subnet_group" "main" {
   name       = "${var.prefix}"
-  subnet_ids = [ "${aws_subnet.private.*.id}" ]
+  subnet_ids = [ "${aws_subnet.public.*.id}" ]
 }
 
 resource "aws_elasticache_cluster" "main" {

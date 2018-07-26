@@ -14,9 +14,5 @@ aws_secret_access_key = n3**b
 ```
 export AWS_PROFILE="ribose"
 export AWS_DEFAULT_REGION="eu-west-1"
-terraform plan
+terraform apply
 ```
-
-## Troubleshooting
-
-In order to spin up a test EC2 instance and check the system, you can define a terraform variable `test=true`

@@ -1,4 +1,7 @@
+#
 # CA
+#
+
 resource "tls_private_key" "ca" {
   count       = "${var.load_balancer["self_signed"] == 1 ? 1 : 0}"
   algorithm   = "ECDSA"
@@ -20,7 +23,10 @@ resource "tls_self_signed_cert" "ca" {
   }
 }
 
+#
 # GitLab server
+#
+
 resource "tls_private_key" "gitlab" {
   count       = "${var.load_balancer["self_signed"] == 1 ? 1 : 0}"
   algorithm   = "ECDSA"
@@ -50,4 +56,13 @@ resource "tls_locally_signed_cert" "gitlab" {
     "digital_signature",
     "server_auth",
   ]
+}
+
+#
+# SSH
+#
+
+resource "tls_private_key" "ssh" {
+  algorithm = "RSA"
+  rsa_bits  = "2048"
 }

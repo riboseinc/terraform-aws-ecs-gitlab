@@ -97,19 +97,19 @@ resource "aws_iam_role_policy" "ecs_instance_role" {
     {
       "Effect": "Allow",
       "Action": [
-        "s3:AbortMultipartUpload",
-        "s3:GetBucketAcl",
-        "s3:GetBucketLocation",
-        "s3:GetObject",
-        "s3:GetObjectAcl",
-        "s3:ListBucketMultipartUploads",
-        "s3:PutObject",
-        "s3:PutObjectAcl",
-        "s3:ListBucket"
+        "s3:*"
       ],
       "Resource": [
         "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-backups.id}",
-        "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-backups.id}/*"
+        "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-backups.id}/*",
+        "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-runner-cache.id}",
+        "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-runner-cache.id}/*",
+        "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-artifacts.id}",
+        "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-artifacts.id}/*",
+        "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-lfs.id}",
+        "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-lfs.id}/*",
+        "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-uploads.id}",
+        "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-uploads.id}/*"
       ]
     }
   ]

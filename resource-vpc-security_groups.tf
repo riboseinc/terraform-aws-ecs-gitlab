@@ -37,8 +37,7 @@ resource "aws_security_group" "allow_postgresql" {
     to_port         = 5432
     protocol        = "tcp"
     cidr_blocks     = [
-      "${values(var.vpc_public_subnets)}",
-      "${values(var.vpc_private_subnets)}"
+      "${values(var.vpc_public_subnets)}"
     ]
   }
 }
@@ -64,29 +63,27 @@ resource "aws_security_group" "allow_web_public" {
   }
 }
 
-resource "aws_security_group" "allow_web_private" {
+resource "aws_security_group" "allow_all_public_subnets_vpc" {
   name_prefix = "${var.prefix}"
   description = "Allow Web Private"
   vpc_id      = "${aws_vpc.main.id}"
   tags        = "${var.default_tags}"
 
   ingress {
-    from_port       = 80
-    to_port         = 80
-    protocol        = "tcp"
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
     cidr_blocks     = [
-      "${values(var.vpc_public_subnets)}",
-      "${values(var.vpc_private_subnets)}"
+      "${values(var.vpc_public_subnets)}"
     ]
   }
 
   ingress {
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
     cidr_blocks     = [
-      "${values(var.vpc_public_subnets)}",
-      "${values(var.vpc_private_subnets)}"
+      "${values(var.vpc_public_subnets)}"
     ]
   }
 }
@@ -102,8 +99,7 @@ resource "aws_security_group" "allow_redis" {
     to_port         = 6379
     protocol        = "tcp"
     cidr_blocks     = [
-      "${values(var.vpc_public_subnets)}",
-      "${values(var.vpc_private_subnets)}"
+      "${values(var.vpc_public_subnets)}"
     ]
   }
 }
@@ -119,34 +115,7 @@ resource "aws_security_group" "allow_ssh" {
     to_port         = 22
     protocol        = "tcp"
     cidr_blocks     = [
-      "${values(var.vpc_public_subnets)}",
-      "${values(var.vpc_private_subnets)}"
-    ]
-  }
-}
-
-resource "aws_security_group" "allow_all_private" {
-  name_prefix = "${var.prefix}"
-  description = "Allow all inbound traffic"
-  vpc_id      = "${aws_vpc.main.id}"
-  tags        = "${var.default_tags}"
-
-  ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks     = [
-      "${values(var.vpc_public_subnets)}",
-      "${values(var.vpc_private_subnets)}"
-    ]
-  }
-
-  egress {
-    from_port       = 0
-    to_port         = 0
-    protocol        = "-1"
-    cidr_blocks     = [
-      "${values(var.vpc_private_subnets)}"
+      "0.0.0.0/0"
     ]
   }
 }
