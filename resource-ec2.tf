@@ -15,6 +15,9 @@ resource "aws_instance" "ecs_instances" {
     "${aws_security_group.allow_all_egress.id}",
     "${aws_security_group.allow_all_public_subnets_vpc.id}"
   ]
+  lifecycle {
+    ignore_changes = ["ami"]
+  }
 }
 
 resource "aws_ebs_volume" "ecs_instances" {
@@ -43,4 +46,7 @@ resource "aws_instance" "gitlab_runner_instances" {
     "${aws_security_group.allow_all_egress.id}",
     "${aws_security_group.allow_all_public_subnets_vpc.id}"
   ]
+  lifecycle {
+    ignore_changes = ["ami"]
+  }
 }
