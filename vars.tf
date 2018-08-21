@@ -37,10 +37,14 @@ variable "gitlab_servers" {
 variable "gitlab_runners" {
   type    = "map"
   default = {
-    count           = 2
+    image           = "gitlab/gitlab-ce:latest"
     concurrent      = 10
     check_interval  = 3
     instance_type   = "t2.small"
+    RUNNER_LIMIT    = 3
+    DOCKER_IMAGE    = "centos:7"
+    IDLE_COUNT      = 0
+    IDLE_TIME       = 3000
   }
 }
 

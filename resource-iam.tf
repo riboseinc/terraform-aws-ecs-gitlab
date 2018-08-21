@@ -66,9 +66,16 @@ resource "aws_iam_role_policy" "ecs_instance_role" {
         "autoscaling:DescribeAutoScalingInstances",
         "autoscaling:DescribeAutoScalingGroups",
         "ec2:Describe*",
+        "ec2:CreateKeyPair",
+        "ec2:DeleteKeyPair",
+        "ec2:ImportKeyPair",
+        "ec2:CreateSecurityGroup",
+        "ec2:AuthorizeSecurityGroupIngress",
+        "ec2:CreateTags",
         "ecs:DeregisterContainerInstance",
         "ecs:DiscoverPollEndpoint",
         "ecs:Poll",
+        "ec2:RunInstances",
         "ecs:RegisterContainerInstance",
         "ecs:StartTelemetrySession",
         "ecs:Submit*",
@@ -85,6 +92,29 @@ resource "aws_iam_role_policy" "ecs_instance_role" {
         "elasticloadbalancing:DeregisterTargets"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "TheseActionsSupportResourceLevelPermissions",
+      "Effect": "Allow",
+      "Action": [
+          "ec2:TerminateInstances",
+          "ec2:StopInstances",
+          "ec2:StartInstances",
+          "ec2:RebootInstances"
+      ],
+      "Condition": {
+          "StringEquals": {
+              "ec2:ResourceTag/created-by": "gitlab-ci-runners"
+          }
+      },
+      "Resource": [
+          "*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${aws_iam_role.runner_instance_role.name}"
     },
     {
       "Effect": "Allow",
@@ -155,30 +185,36 @@ resource "aws_iam_role_policy" "runner_instance_role" {
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Sid": "TheseActionsSupportResourceLevelPermissions",
       "Effect": "Allow",
       "Action": [
-        "s3:GetBucketLocation",
-        "s3:ListAllMyBuckets"
+          "ec2:Describe*"
       ],
-      "Resource": "*"
+      "Resource": [
+          "*"
+      ]
     },
     {
       "Effect": "Allow",
       "Action": [
-        "s3:AbortMultipartUpload",
-        "s3:GetBucketAcl",
-        "s3:GetBucketLocation",
-        "s3:GetObject",
-        "s3:GetObjectAcl",
-        "s3:ListBucketMultipartUploads",
-        "s3:PutObject",
-        "s3:PutObjectAcl",
-        "s3:ListBucket"
+          "ec2:TerminateInstances",
+          "ec2:StopInstances"
       ],
+      "Condition": {
+          "StringEquals": {
+              "ec2:ResourceTag/created-by": "gitlab-ci-runners"
+          }
+      },
       "Resource": [
-        "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-runner-cache.id}",
-        "arn:aws:s3:::${aws_s3_bucket.s3-gitlab-runner-cache.id}/*"
+          "*"
       ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecs:DescribeClusters"
+      ],
+      "Resource": "*"
     }
   ]
 }

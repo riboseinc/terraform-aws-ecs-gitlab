@@ -66,3 +66,11 @@ resource "tls_private_key" "ssh" {
   algorithm = "RSA"
   rsa_bits  = "2048"
 }
+
+resource "local_file" "ssh" {
+  content  = "${tls_private_key.ssh.private_key_pem }"
+  filename = "./keys/ssh_private_key_pem.key"
+  provisioner "local-exec" {
+    command = "chmod 0600 ./keys/ssh_private_key_pem.key"
+  }
+}

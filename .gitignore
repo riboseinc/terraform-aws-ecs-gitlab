@@ -7,3 +7,5 @@
 
 # .tfvars files
 *.tfvars
+keys/*
+!keys/.gitinit

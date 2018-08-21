@@ -29,7 +29,7 @@ resource "aws_ecs_task_definition" "gitlab-servers" {
   network_mode              = "bridge"
   volume {
     name      = "gitlab-config"
-    host_path = "/srv/gitlab/config"
+    host_path = "/srv/gitlab/configs"
   }
   volume {
     name      = "gitlab-logs"
@@ -42,6 +42,10 @@ resource "aws_ecs_task_definition" "gitlab-servers" {
   volume {
     name      = "gitlab-ssh"
     host_path = "/data/gitlab/.ssh/"
+  }
+  volume {
+    name      = "gitlab-runner-configs"
+    host_path = "/srv/gitlab-runner/config/"
   }
   container_definitions     = <<EOF
 [

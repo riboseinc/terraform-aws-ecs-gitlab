@@ -1,23 +1,43 @@
 #cloud-config
 package_upgrade: true
 
+yum_repos:
+  runner_gitlab-runner:
+    name: runner_gitlab-runner
+    baseurl: https://packages.gitlab.com/runner/gitlab-runner/el/6/$basearch
+    repo_gpgcheck: 1
+    gpgcheck: 0
+    enabled: 1
+    gpgkey: https://packages.gitlab.com/runner/gitlab-runner/gpgkey
+    sslverify: 1
+    sslcacert: /etc/pki/tls/certs/ca-bundle.crt
+    metadata_expire: 300
+
 packages:
+  - gitlab-runner
   - docker
 
 runcmd:
+  - set -x
   - until [ -e /dev/xvdb ]; do sleep 5; done
   - mkfs.xfs /dev/xvdb
   - echo '/dev/xvdb /data xfs defaults 0 0' >>  /etc/fstab
-  - mkdir /data
+  - mkdir /data/
   - mount /data
+  - mkdir -p /data/docker-machine/ /root/.docker/
+  - ln -sf /data/docker-machine /root/.docker/machine
   - service docker restart
   - start ecs
+  - curl -L https://github.com/docker/machine/releases/download/v0.14.0/docker-machine-$(uname -s)-$(uname -m) >/usr/bin/docker-machine
+  - chmod +x /usr/bin/docker-machine
+  - chkconfig docker on ; service docker start
+  - chkconfig gitlab-runner on; service gitlab-runner start
+  - /opt/scripts/gitlab-runner-register.sh
 
 write_files:
   - owner: root:root
     path: /etc/ecs/ecs.config
     content: ECS_CLUSTER=${ecs_cluster}
-
   - owner: root:root
     path: /opt/scripts/gitlab-backup.sh
     permissions: '0755'
@@ -26,8 +46,53 @@ write_files:
       docker ps --filter "label=service=gitlab-server" --quiet | while read line; do
         docker exec $line gitlab-rake gitlab:backup:create CRON=1
       done
-
   - owner: root:root
     path: /etc/cron.d/gitlab
     content: |
       10 5 * * * root /opt/scripts/gitlab-backup.sh
+  - owner: root:root
+    path: /etc/gitlab-runner/ca.pem
+    content: ${GITLAB_SELF_SIGNED_CA}
+  - owner: root:root
+    path: /opt/scripts/gitlab-runner-register.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      export REGISTER_NON_INTERACTIVE="true"
+      export REGISTER_LOCKED="false"
+      export REGISTER_RUN_UNTAGGED="true"
+      export CI_SERVER_URL="${GITLAB_RUNNER_URL}"
+      export CI_SERVER_TLS_CA_FILE="/etc/gitlab-runner/ca.pem"
+      export REGISTRATION_TOKEN="${GITLAB_RUNNER_TOKEN}"
+
+      export DOCKER_IMAGE="${DOCKER_IMAGE}"
+      export DOCKER_PRIVILEGED="true"
+      export DOCKER_DISABLE_CACHE="false"
+
+      export CACHE_TYPE="s3"
+      export S3_BUCKET_NAME="${GITLAB_CACHE_BUCKET_NAME}"
+      export S3_BUCKET_LOCATION="${REGION}"
+      export S3_CACHE_INSECURE="false"
+      export CACHE_SHARED="true"
+
+      export MACHINE_IDLE_COUNT="${IDLE_COUNT}"
+      export MACHINE_IDLE_TIME="${IDLE_TIME}"
+      export MACHINE_DRIVER="amazonec2"
+      export MACHINE_NAME="runner-%s"
+
+      export CONFIG_FILE="/etc/gitlab-runner/config.toml"
+      export RUNNER_EXECUTOR="docker+machine"
+      until gitlab-runner register \
+              --description aws-gitlab-runner-spawner \
+              --machine-machine-options amazonec2-tags=created-by,gitlab-ci-runners \
+              --machine-machine-options amazonec2-region=${REGION} \
+              --machine-machine-options amazonec2-instance-type=${RUNNER_INSTANCE_TYPE} \
+              --machine-machine-options amazonec2-vpc-id=${RUNNER_VPC} \
+              --machine-machine-options amazonec2-iam-instance-profile=${RUNNER_IAM} \
+              --machine-machine-options amazonec2-request-spot-instance=false ; do sleep 30; done
+
+  - owner: root:root
+    path: /etc/gitlab-runner/config.toml
+    content: |
+      concurrent = ${GITLAB_CONCURRENT_JOB}
+      check_interval = ${GITLAB_CHECK_INTERVAL}
