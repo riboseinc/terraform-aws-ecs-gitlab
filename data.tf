@@ -50,6 +50,10 @@ data "template_file" "ecs_instances" {
     RUNNER_VPC                = "${aws_vpc.main.id}"
     RUNNER_SUBNET             = "${aws_subnet.public.1.id}"
     RUNNER_IAM                = "${aws_iam_instance_profile.runner.name}"
+    RUNNER_SG                 = "${aws_security_group.runner.name}"
+    RUNNER_KEY_NAME           = "${aws_key_pair.runners.key_name}"
+    RUNNER_KEY_PRIVATE        = "${jsonencode(tls_private_key.runners-ssh.private_key_pem)}"
+    RUNNER_KEY_PUB            = "${tls_private_key.runners-ssh.public_key_openssh}"
     IDLE_COUNT                = "${var.gitlab_runners["IDLE_COUNT"]}"
     IDLE_TIME                 = "${var.gitlab_runners["IDLE_TIME"]}"
   }

@@ -37,14 +37,13 @@ variable "gitlab_servers" {
 variable "gitlab_runners" {
   type    = "map"
   default = {
-    image           = "gitlab/gitlab-ce:latest"
     concurrent      = 10
     check_interval  = 3
     instance_type   = "t2.small"
     RUNNER_LIMIT    = 3
     DOCKER_IMAGE    = "centos:7"
     IDLE_COUNT      = 0
-    IDLE_TIME       = 3000
+    IDLE_TIME       = 300
   }
 }
 
@@ -73,7 +72,6 @@ variable "rds" {
     instance_class      = "db.m3.medium"
     database            = "gitlab"
     username            = "gitlab"
-    password            = "-g1tl4b_Passw0rd!-"
     skip_final_snapshot = true
     version             = "9.6.8"
   }

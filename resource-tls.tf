@@ -74,3 +74,8 @@ resource "local_file" "ssh" {
     command = "chmod 0600 ./keys/ssh_private_key_pem.key"
   }
 }
+
+resource "tls_private_key" "runners-ssh" {
+  algorithm = "RSA"
+  rsa_bits  = "2048"
+}

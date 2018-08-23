@@ -16,6 +16,7 @@ yum_repos:
 packages:
   - gitlab-runner
   - docker
+  - aws-cli
 
 runcmd:
   - set -x
@@ -31,8 +32,8 @@ runcmd:
   - curl -L https://github.com/docker/machine/releases/download/v0.14.0/docker-machine-$(uname -s)-$(uname -m) >/usr/bin/docker-machine
   - chmod +x /usr/bin/docker-machine
   - chkconfig docker on ; service docker start
-  - chkconfig gitlab-runner on; service gitlab-runner start
   - /opt/scripts/gitlab-runner-register.sh
+  - chkconfig gitlab-runner on; service gitlab-runner restart
 
 write_files:
   - owner: root:root
@@ -89,6 +90,9 @@ write_files:
               --machine-machine-options amazonec2-instance-type=${RUNNER_INSTANCE_TYPE} \
               --machine-machine-options amazonec2-vpc-id=${RUNNER_VPC} \
               --machine-machine-options amazonec2-iam-instance-profile=${RUNNER_IAM} \
+              --machine-machine-options amazonec2-security-group=${RUNNER_SG} \
+              --machine-machine-options amazonec2-keypair-name=${RUNNER_KEY_NAME} \
+              --machine-machine-options amazonec2-ssh-keypath=/root/.ssh/runners \
               --machine-machine-options amazonec2-request-spot-instance=false ; do sleep 30; done
 
   - owner: root:root
@@ -96,3 +100,13 @@ write_files:
     content: |
       concurrent = ${GITLAB_CONCURRENT_JOB}
       check_interval = ${GITLAB_CHECK_INTERVAL}
+
+  - owner: root:root
+    path: /root/.ssh/runners
+    permissions: '0600'
+    content: ${RUNNER_KEY_PRIVATE}
+
+  - owner: root:root
+    path: /root/.ssh/runners.pub
+    permissions: '0600'
+    content: ${RUNNER_KEY_PUB}
