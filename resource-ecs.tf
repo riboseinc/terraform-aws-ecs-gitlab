@@ -113,6 +113,6 @@ resource "aws_ecs_service" "gitlab-servers" {
   }
 }
 
-output "Gitlab root password" {
+output "Gitlab_root_password" {
   value = "${random_string.gitlab_root_password.result}"
 }

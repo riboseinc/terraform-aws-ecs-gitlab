@@ -49,6 +49,6 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-output "Web access" {
+output "Web_access" {
   value = "${local.gitlab_address}"
 }

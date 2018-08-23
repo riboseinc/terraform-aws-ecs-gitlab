@@ -32,6 +32,6 @@ resource "aws_s3_bucket" "s3-gitlab-uploads" {
   force_destroy = true
 }
 
-output "Backup butcket" {
+output "Backup_butcket" {
   value = "${aws_s3_bucket.s3-gitlab-backups.id}"
 }
