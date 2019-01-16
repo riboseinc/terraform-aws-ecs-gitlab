@@ -3,7 +3,7 @@ terraform {
 }
 
 provider "aws" {
-  version = "~> 1.28"
+  version = "~> 1.56"
 }
 
 provider "local" {
@@ -11,13 +11,16 @@ provider "local" {
 }
 
 provider "random" {
-  version = "~> 1.1"
+  version = "~> 2.0"
 }
 
 provider "template" {
-  version = "~> 1.0"
+  version = "~> 2.0"
 }
 
 provider "tls" {
-  version = "~> 1.0"
+  version = "~> 1.2"
 }
+
+data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
