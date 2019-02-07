@@ -8,20 +8,19 @@ resource "random_string" "gitlab_postgres_password" {
 
 resource "aws_db_subnet_group" "main" {
   name_prefix = "${var.prefix}"
-  tags        = "${var.default_tags}"
-  subnet_ids  = [ "${aws_subnet.public.*.id}" ]
+  subnet_ids  = ["${var.subnets}"]
 }
 
 resource "random_id" "rds" {
   keepers = {
     ami_id = "${var.rds["database"]}"
   }
+
   byte_length = 8
 }
 
 resource "aws_db_instance" "main" {
   name                      = "${var.rds["database"]}"
-  tags                      = "${var.default_tags}"
   allocated_storage         = "${var.rds["allocated_storage"]}"
   storage_type              = "${var.rds["storage_type"]}"
   engine                    = "postgres"
@@ -35,8 +34,9 @@ resource "aws_db_instance" "main" {
   backup_retention_period   = 3
   backup_window             = "02:00-03:00"
   maintenance_window        = "sun:03:01-sun:05:00"
-  vpc_security_group_ids    = [
+
+  vpc_security_group_ids = [
     "${aws_security_group.allow_all_egress.id}",
-    "${aws_security_group.allow_postgresql.id}"
+    "${aws_security_group.allow_postgresql.id}",
   ]
 }

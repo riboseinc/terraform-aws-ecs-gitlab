@@ -1,0 +1,15 @@
+---
+language: bash
+dist: xenial
+
+addons:
+  snaps:
+    - terraform
+
+env:
+  - AWS_REGION=us-east-1
+
+script:
+  - terraform init
+  - terraform validate
+  - terraform fmt -write=false -list=true -diff=true -check=true

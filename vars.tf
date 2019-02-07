@@ -1,71 +1,60 @@
-variable "force_destroy_backups" { default = true }
+variable "gitlab_domain" {
+  default = ""
+}
 
 variable "prefix" {
   default = "ribose"
 }
 
-variable "load_balancer" {
-  type    = "map"
-  default = {
-    https             = true
-    self_signed       = true # if false, private_key and certificate_body should be set
-    private_key       = <<EOF
------BEGIN RSA PRIVATE KEY-----
-...
------END RSA PRIVATE KEY-----
-EOF
-    certificate_body  = <<EOF
------BEGIN CERTIFICATE-----
-...
------END CERTIFICATE-----
-EOF
-  }
+variable "aws_ecs_cluster_id" {
+  default = ""
 }
 
-variable "gitlab_servers" {
-  type    = "map"
-  default = {
-    image             = "gitlab/gitlab-ce:latest"
-    count             = 1 # no more than 1 at the moment
-    cpu               = 2048
-    memory            = 4096
-    backup_keep_time  = 604800
-    volume_size       = 100
-  }
+variable "vpc_id" {
+  default = ""
+}
+
+# Minimum 2 subnets should be configured
+variable "subnets" {
+  type    = "list"
+  default = []
+}
+
+variable "certificate_self_signed" {
+  default = false
+}
+
+variable "certificate_arn" {
+  default = "arn:..."
 }
 
 variable "gitlab_runners" {
-  type    = "map"
-  default = {
-    concurrent      = 10
-    check_interval  = 3
-    instance_type   = "t2.small"
-    RUNNER_LIMIT    = 3
-    DOCKER_IMAGE    = "centos:7"
-    IDLE_COUNT      = 0
-    IDLE_TIME       = 300
-  }
-}
+  type = "map"
 
-variable "ecs_instances" {
-  type      = "map"
-  default   = {
-    min_size        = 2
-    max_size        = 5
-    instance_type   = "t2.large"
+  default = {
+    image          = "gitlab/gitlab-runner:latest"
+    concurrent     = 10
+    check_interval = 3
+    instance_type  = "t2.small"
+    RUNNER_LIMIT   = 3
+    DOCKER_IMAGE   = "centos:7"
+    IDLE_COUNT     = 0
+    IDLE_TIME      = 300
   }
 }
 
 variable "elasticache" {
   type = "map"
+
   default = {
-    node_type       = "cache.t2.micro"
-    version         = "4.0.10"
+    node_type = "cache.t2.micro"
+    version   = "5.0.0"
   }
 }
 
 variable "rds" {
-  type    = "map"
+  type = "map"
+
   default = {
     allocated_storage   = 20
     storage_type        = "gp2"
@@ -73,33 +62,14 @@ variable "rds" {
     database            = "gitlab"
     username            = "gitlab"
     skip_final_snapshot = true
-    version             = "9.6.8"
-  }
-}
-
-variable "vpc_cidr_block" {
-  default = "10.0.0.0/16"
-}
-
-variable "vpc_public_subnets" {
-  type = "map"
-  default = {
-    a  = "10.0.30.0/24"
-    b  = "10.0.40.0/24"
-  }
-}
-
-variable "default_tags" {
-  type = "map"
-  default = {
-    Name        = "GitLab"
-    Provisioner = "Terraform"
+    version             = "10.6"
   }
 }
 
 locals {
-  gitlab_domain         = "${aws_lb.gitlab.dns_name}"
-  gitlab_address        = "http${var.load_balancer["https"] == 1 ? "s" : ""}://${local.gitlab_domain}/"
+  gitlab_domain  = "${var.gitlab_domain == "" ? aws_lb.gitlab.dns_name : var.gitlab_domain}"
+  gitlab_address = "https://${local.gitlab_domain}/"
+
   gitlab_omnibus_config = [
     "external_url '${local.gitlab_address}'",
     "nginx['http2_enabled'] = true",
@@ -120,32 +90,32 @@ locals {
     "gitlab_rails['db_port'] = 5432",
     "gitlab_rails['db_username'] = '${var.rds["username"]}'",
     "gitlab_rails['db_password'] = '${random_string.gitlab_postgres_password.result}'",
-    "git_data_dirs({'default': {'path': '/gitlab-data/git-data'}})",
+    "git_data_dirs({'default': {'path': '/gitlab-data'}})",
     "user['home'] = '/gitlab-data/home'",
     "gitlab_rails['uploads_directory'] = '/gitlab-data/uploads'",
     "gitlab_rails['shared_path'] = '/gitlab-data/shared'",
     "gitlab_ci['builds_directory'] = '/gitlab-data/builds'",
     "high_availability['mountpoint'] = '/gitlab-data'",
     "gitlab_rails['backup_upload_connection'] = { 'provider' => 'AWS', 'region' => '${data.aws_region.current.name}', 'use_iam_profile' => true }",
-    "gitlab_rails['backup_upload_remote_directory'] = '${aws_s3_bucket.s3-gitlab-backups.id}'",
-    "gitlab_rails['backup_keep_time'] = ${var.gitlab_servers["backup_keep_time"]}",
+    "gitlab_rails['backup_upload_remote_directory'] = '${aws_s3_bucket.gitlab.id}'",
+    "gitlab_rails['backup_keep_time'] = 604800",
     "gitlab_shell['secret_file'] = '/data/gitlab-secrets/gitlab-secrets.json'",
     "gitlab_rails['artifacts_enabled'] = true",
     "gitlab_rails['artifacts_object_store_enabled'] = true",
-    "gitlab_rails['artifacts_object_store_remote_directory'] = '${aws_s3_bucket.s3-gitlab-artifacts.id}'",
+    "gitlab_rails['artifacts_object_store_remote_directory'] = '${aws_s3_bucket.gitlab.id}'",
     "gitlab_rails['artifacts_object_store_direct_upload'] = true",
     "gitlab_rails['artifacts_object_store_connection'] = { 'provider' => 'AWS', 'region' => '${data.aws_region.current.name}', 'use_iam_profile' => true }",
     "gitlab_rails['lfs_enabled'] = false",
     "gitlab_rails['lfs_object_store_enabled'] = true",
     "gitlab_rails['lfs_object_store_direct_upload'] = true",
-    "gitlab_rails['lfs_object_store_remote_directory'] = '${aws_s3_bucket.s3-gitlab-lfs.id}'",
+    "gitlab_rails['lfs_object_store_remote_directory'] = '${aws_s3_bucket.gitlab.id}'",
     "gitlab_rails['lfs_object_store_connection'] = { 'provider' => 'AWS', 'region' => '${data.aws_region.current.name}', 'use_iam_profile' => true }",
     "gitlab_rails['uploads_object_store_enabled'] = true",
     "gitlab_rails['uploads_object_store_direct_upload'] = true",
-    "gitlab_rails['uploads_object_store_remote_directory'] = '${aws_s3_bucket.s3-gitlab-uploads.id}'",
+    "gitlab_rails['uploads_object_store_remote_directory'] = '${aws_s3_bucket.gitlab.id}'",
     "gitlab_rails['uploads_object_store_connection'] = { 'provider' => 'AWS', 'region' => '${data.aws_region.current.name}', 'use_iam_profile' => true }",
     "gitlab_rails['gitlab_email_enabled'] = true",
     "gitlab_rails['gitlab_email_from'] = 'gitlab@${local.gitlab_domain}'",
-    "gitlab_rails['gitlab_email_reply_to'] = 'noreply@${local.gitlab_domain}'"
+    "gitlab_rails['gitlab_email_reply_to'] = 'noreply@${local.gitlab_domain}'",
   ]
 }
