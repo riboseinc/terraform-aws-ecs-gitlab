@@ -40,7 +40,7 @@ You can literally copy and paste the following example, change the following att
 ```hcl
 # include this module and enter the values of input variables
 module "ecs-gitlab" {
-  source              = "github.com/riboseinc/terraform-aws-ecs-gitlab"
+  source              = "riboseinc/ecs-gitlab/aws"
   gitlab_domain       = "gitlab.example.com"
   prefix              = "ribose"
   aws_ecs_cluster_id  = "arn:..."
@@ -49,11 +49,11 @@ module "ecs-gitlab" {
   certificate_arn     = "arn:..."
 }
 
-output "Root Password" {
-  value = "${module.ecs-gitlab.gitlab_root_password}"
+output "Root_Password" {
+  value = module.ecs-gitlab.gitlab_root_password
 }
 
-output "Gitlab Address" {
-  value = "${module.ecs-gitlab.gitlab_web_endpoint}"
+output "Gitlab_Address" {
+  value = module.ecs-gitlab.gitlab_web_endpoint
 }
 ```

@@ -16,7 +16,7 @@ variable "vpc_id" {
 
 # Minimum 2 subnets should be configured
 variable "subnets" {
-  type    = "list"
+  type    = list(string)
   default = []
 }
 
@@ -29,7 +29,7 @@ variable "certificate_arn" {
 }
 
 variable "gitlab_runners" {
-  type = "map"
+  type = map(string)
 
   default = {
     image          = "gitlab/gitlab-runner:latest"
@@ -44,7 +44,7 @@ variable "gitlab_runners" {
 }
 
 variable "elasticache" {
-  type = "map"
+  type = map(string)
 
   default = {
     node_type = "cache.t2.micro"
@@ -53,7 +53,7 @@ variable "elasticache" {
 }
 
 variable "rds" {
-  type = "map"
+  type = map(string)
 
   default = {
     allocated_storage   = 20
@@ -67,7 +67,7 @@ variable "rds" {
 }
 
 locals {
-  gitlab_domain  = "${var.gitlab_domain == "" ? aws_lb.gitlab.dns_name : var.gitlab_domain}"
+  gitlab_domain  = var.gitlab_domain == "" ? aws_lb.gitlab.dns_name : var.gitlab_domain
   gitlab_address = "https://${local.gitlab_domain}/"
 
   gitlab_omnibus_config = [
@@ -80,7 +80,7 @@ locals {
     "nginx['redirect_http_to_https'] = true",
     "nginx['proxy_set_headers'] = {'X-Forwarded-Proto' => 'https', 'X-Forwarded-Ssl' => 'on'}",
     "redis['enable'] = false",
-    "gitlab_rails['redis_host'] = '${aws_elasticache_cluster.main.cache_nodes.0.address}'",
+    "gitlab_rails['redis_host'] = '${aws_elasticache_cluster.main.cache_nodes[0].address}'",
     "gitlab_rails['redis_port'] = 6379",
     "postgresql['enable'] = false",
     "gitlab_rails['db_adapter'] = 'postgresql'",

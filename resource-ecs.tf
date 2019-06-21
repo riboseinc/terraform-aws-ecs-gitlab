@@ -5,7 +5,7 @@ resource "random_string" "gitlab_root_password" {
   number = true
 
   keepers = {
-    rds_id = "${aws_db_instance.main.id}"
+    rds_id = aws_db_instance.main.id
   }
 }
 
@@ -25,8 +25,8 @@ resource "aws_ecs_task_definition" "gitlab" {
   family                   = "gitlab-${random_id.ecs_id.hex}"
   requires_compatibilities = ["EC2"]
   network_mode             = "bridge"
-  task_role_arn            = "${aws_iam_role.ecs_task.arn}"
-  execution_role_arn       = "${aws_iam_role.ecs_task.arn}"
+  task_role_arn            = aws_iam_role.ecs_task.arn
+  execution_role_arn       = aws_iam_role.ecs_task.arn
   cpu                      = 2048
   memory                   = 4096
 
@@ -196,20 +196,21 @@ resource "aws_ecs_task_definition" "gitlab" {
         ]
       }
     ]
-    EOF
+EOF
+
 
   volume {
     name = "gitlab-${random_id.ecs_id.hex}-server-data"
 
     docker_volume_configuration {
       autoprovision = true
-      scope         = "shared"
-      driver        = "local"
+      scope = "shared"
+      driver = "local"
 
-      driver_opts {
-        type   = "nfs"
+      driver_opts = {
+        type = "nfs"
         device = "${aws_efs_file_system.gitlab.dns_name}:/server/data"
-        o      = "addr=${aws_efs_file_system.gitlab.dns_name},nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport"
+        o = "addr=${aws_efs_file_system.gitlab.dns_name},nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport"
       }
     }
   }
@@ -219,13 +220,13 @@ resource "aws_ecs_task_definition" "gitlab" {
 
     docker_volume_configuration {
       autoprovision = true
-      scope         = "shared"
-      driver        = "local"
+      scope = "shared"
+      driver = "local"
 
-      driver_opts {
-        type   = "nfs"
+      driver_opts = {
+        type = "nfs"
         device = "${aws_efs_file_system.gitlab.dns_name}:/server/config"
-        o      = "addr=${aws_efs_file_system.gitlab.dns_name},nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport"
+        o = "addr=${aws_efs_file_system.gitlab.dns_name},nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport"
       }
     }
   }
@@ -235,13 +236,13 @@ resource "aws_ecs_task_definition" "gitlab" {
 
     docker_volume_configuration {
       autoprovision = true
-      scope         = "shared"
-      driver        = "local"
+      scope = "shared"
+      driver = "local"
 
-      driver_opts {
-        type   = "nfs"
+      driver_opts = {
+        type = "nfs"
         device = "${aws_efs_file_system.gitlab.dns_name}:/runner"
-        o      = "addr=${aws_efs_file_system.gitlab.dns_name},nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport"
+        o = "addr=${aws_efs_file_system.gitlab.dns_name},nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport"
       }
     }
   }
@@ -251,35 +252,35 @@ resource "aws_ecs_task_definition" "gitlab" {
 
     docker_volume_configuration {
       autoprovision = true
-      scope         = "shared"
-      driver        = "local"
+      scope = "shared"
+      driver = "local"
 
-      driver_opts {
-        type   = "nfs"
+      driver_opts = {
+        type = "nfs"
         device = "${aws_efs_file_system.gitlab.dns_name}:/"
-        o      = "addr=${aws_efs_file_system.gitlab.dns_name},nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport"
+        o = "addr=${aws_efs_file_system.gitlab.dns_name},nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport"
       }
     }
   }
 }
 
 resource "aws_ecs_service" "gitlab" {
-  name                               = "${var.prefix}-gitlab-${random_id.ecs_id.hex}"
-  cluster                            = "${var.aws_ecs_cluster_id}"
-  task_definition                    = "${aws_ecs_task_definition.gitlab.arn}"
-  desired_count                      = 1
-  launch_type                        = "EC2"
-  iam_role                           = "${aws_iam_role.ecs_service.arn}"
+  name = "${var.prefix}-gitlab-${random_id.ecs_id.hex}"
+  cluster = var.aws_ecs_cluster_id
+  task_definition = aws_ecs_task_definition.gitlab.arn
+  desired_count = 1
+  launch_type = "EC2"
+  iam_role = aws_iam_role.ecs_service.arn
   deployment_minimum_healthy_percent = 0
-  deployment_maximum_percent         = 100
+  deployment_maximum_percent = 100
 
   load_balancer {
-    target_group_arn = "${aws_lb_target_group.http.arn}"
-    container_name   = "gitlab-server"
-    container_port   = 80
+    target_group_arn = aws_lb_target_group.http.arn
+    container_name = "gitlab-server"
+    container_port = 80
   }
 }
 
 output "gitlab_root_password" {
-  value = "${random_string.gitlab_root_password.result}"
+  value = random_string.gitlab_root_password.result
 }

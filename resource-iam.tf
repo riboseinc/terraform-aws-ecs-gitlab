@@ -1,5 +1,5 @@
 resource "aws_iam_role" "ecs_task" {
-  name_prefix = "${var.prefix}"
+  name_prefix = var.prefix
 
   assume_role_policy = <<EOF
 {
@@ -19,16 +19,17 @@ resource "aws_iam_role" "ecs_task" {
   ]
 }
 EOF
+
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_task" {
-  role       = "${aws_iam_role.ecs_task.name}"
+  role = aws_iam_role.ecs_task.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 resource "aws_iam_role_policy" "ecs_task" {
-  name_prefix = "${var.prefix}"
-  role        = "${aws_iam_role.ecs_task.id}"
+  name_prefix = var.prefix
+  role = aws_iam_role.ecs_task.id
 
   policy = <<EOF
 {
@@ -102,12 +103,13 @@ resource "aws_iam_role_policy" "ecs_task" {
   ]
 }
 EOF
+
 }
 
 resource "aws_iam_role" "ecs_service" {
-  name_prefix = "${var.prefix}"
+name_prefix = var.prefix
 
-  assume_role_policy = <<-EOF
+assume_role_policy = <<-EOF
   {
     "Version": "2012-10-17",
     "Statement": [
@@ -123,19 +125,20 @@ resource "aws_iam_role" "ecs_service" {
       }
     ]
   }
-  EOF
+EOF
+
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_service" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole"
-  role       = "${aws_iam_role.ecs_service.id}"
+policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole"
+role = aws_iam_role.ecs_service.id
 }
 
 resource "aws_iam_role_policy" "ecs_service" {
-  name_prefix = "${var.prefix}"
-  role        = "${aws_iam_role.ecs_service.id}"
+name_prefix = var.prefix
+role = aws_iam_role.ecs_service.id
 
-  policy = <<EOF
+policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -152,6 +155,7 @@ resource "aws_iam_role_policy" "ecs_service" {
   ]
 }
 EOF
+
 }
 
 #
@@ -159,7 +163,7 @@ EOF
 #
 
 resource "aws_iam_role" "gitlab_runner_instance" {
-  name_prefix = "${var.prefix}"
+  name_prefix = var.prefix
 
   assume_role_policy = <<-EOF
   {
@@ -176,13 +180,14 @@ resource "aws_iam_role" "gitlab_runner_instance" {
       }
     ]
   }
-  EOF
+EOF
+
 }
 
 resource "aws_iam_instance_profile" "gitlab_runner_instance" {
-  name_prefix = "${var.prefix}"
-  path        = "/"
-  role        = "${aws_iam_role.gitlab_runner_instance.name}"
+  name_prefix = var.prefix
+  path = "/"
+  role = aws_iam_role.gitlab_runner_instance.name
 
   lifecycle {
     create_before_destroy = true
@@ -190,8 +195,8 @@ resource "aws_iam_instance_profile" "gitlab_runner_instance" {
 }
 
 resource "aws_iam_role_policy" "gitlab_runner_instance" {
-  name_prefix = "${var.prefix}"
-  role        = "${aws_iam_role.gitlab_runner_instance.id}"
+  name_prefix = var.prefix
+  role = aws_iam_role.gitlab_runner_instance.id
 
   policy = <<-EOF
   {
@@ -236,5 +241,6 @@ resource "aws_iam_role_policy" "gitlab_runner_instance" {
       }
     ]
   }
-  EOF
+EOF
+
 }
