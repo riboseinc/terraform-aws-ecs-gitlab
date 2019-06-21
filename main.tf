@@ -1,25 +1,12 @@
 terraform {
-  required_version = "~> 0.11"
-}
-
-provider "aws" {
-  version = "~> 1.56"
-}
-
-provider "local" {
-  version = "~> 1.1"
-}
-
-provider "random" {
-  version = "~> 2.0"
-}
-
-provider "template" {
-  version = "~> 2.0"
-}
-
-provider "tls" {
-  version = "~> 1.2"
+  required_version = ">= 0.12"
+  required_providers {
+    aws      = "~> 2.16"
+    local    = "~> 1.2"
+    random   = "~> 2.1"
+    template = "~> 2.1"
+    tls      = "~> 2.0"
+  }
 }
 
 data "aws_region" "current" {}
